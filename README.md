@@ -3,7 +3,7 @@ A package built for Lumen that ports most of the make commands from Laravel.
 
 **At the moment package compatible only with Lumen >= 5.6.**
 
-#Info
+## Info
 This package based on michaelb/lumen-make and smskin/lumen-make libraries.
 
 ## Installation
