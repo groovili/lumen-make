@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\UnauthorizedException;
+use Illuminate\Validation\ValidationException;
 use Laravel\Lumen\Http\Redirector;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Validation\Validator;
@@ -102,9 +103,9 @@ class FormRequest extends Request implements ValidatesWhenResolved
      */
     protected function failedValidation(Validator $validator)
     {
-        throw new HttpResponseException($this->response(
-            $this->formatErrors($validator)
-        ));
+        throw (new ValidationException($validator))
+            ->errorBag($this->errorBag)
+            ->redirectTo($this->getRedirectUrl());
     }
 
     /**
@@ -130,22 +131,6 @@ class FormRequest extends Request implements ValidatesWhenResolved
     protected function failedAuthorization()
     {
         throw new UnauthorizedException($this->forbiddenResponse());
-    }
-
-    /**
-     * Get the proper failed validation response for the request.
-     *
-     * @param  array $errors
-     * @return \Symfony\Component\HttpFoundation\Response
-     */
-    public function response(array $errors)
-    {
-        if (($this->ajax() && !$this->pjax()) || $this->wantsJson()) {
-            return new JsonResponse($errors, 422);
-        }
-        return $this->redirector->to($this->getRedirectUrl())
-            ->withInput($this->except($this->dontFlash))
-            ->withErrors($errors, $this->errorBag);
     }
 
     /**
@@ -176,7 +161,8 @@ class FormRequest extends Request implements ValidatesWhenResolved
      */
     protected function getRedirectUrl()
     {
-        $url = $this->redirector->getUrlGenerator();
+        $url = $this->redirector;
+
         if ($this->redirect) {
             return $url->to($this->redirect);
         } elseif ($this->redirectRoute) {
@@ -184,7 +170,7 @@ class FormRequest extends Request implements ValidatesWhenResolved
         } elseif ($this->redirectAction) {
             return $url->action($this->redirectAction);
         }
-        return $url->previous();
+        return false;
     }
 
     /**
